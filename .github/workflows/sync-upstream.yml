@@ -1,0 +1,46 @@
+
+name: Sync Actual upstream
+
+on:
+  schedule:
+    - cron: '17 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: actual-upstream-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch upstream
+        run: |
+          git remote add upstream \
+            https://github.com/actualbudget/actual.git
+          git fetch upstream master
+
+      - name: Merge upstream changes
+        run: |
+          git merge --no-edit upstream/master
+
+      - name: Push updated master
+        run: |
+          git push origin HEAD:master
+
