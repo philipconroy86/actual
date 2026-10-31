@@ -1,3 +1,4 @@
+
 name: Build Custom Actual Budget
 
 on:
@@ -18,6 +19,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -28,12 +32,53 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker image
+      - name: Set up build environment
+        uses: ./.github/actions/setup
+        with:
+          cache: 'false'
+
+      - name: Build frontend and server
+        run: yarn build:server
+
+      - name: Build test image
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./sync-server.Dockerfile
+          file: packages/sync-server/docker/ubuntu.Dockerfile
+          load: true
+          push: false
+          tags: actual-custom-testing:latest
+
+      - name: Test container startup
+        timeout-minutes: 2
+        run: |
+          docker run -d \
+            --name actual-test \
+            -p 5006:5006 \
+            actual-custom-testing:latest
+
+          for i in $(seq 1 30); do
+            if curl --fail --silent http://localhost:5006/ > /dev/null; then
+              echo "Actual server started successfully"
+              exit 0
+            fi
+            sleep 2
+          done
+
+          docker logs actual-test
+          exit 1
+
+      - name: Build and push production image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: packages/sync-server/docker/ubuntu.Dockerfile
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: ghcr.io/philipconroy86/actual:net-worth-breakdown
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Show logs on failure
+        if: failure()
+        run: docker logs actual-test || true
