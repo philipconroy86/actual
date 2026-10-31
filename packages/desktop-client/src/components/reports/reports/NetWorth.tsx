@@ -113,6 +113,9 @@ function NetWorthInner({ widget }: NetWorthInnerProps) {
   const [graphMode, setGraphMode] = useState<GraphMode>(
     widget?.meta?.mode || 'trend',
   );
+  const [negativeDebt, setNegativeDebt] = useState(
+    widget?.meta?.negativeDebt ?? false,
+  );
   // Combined setter: set mode and update interval (unless interval was set in widget meta)
   const setModeAndInterval = useCallback(
     (newMode: TimeFrame['mode']) => {
@@ -247,6 +250,7 @@ function NetWorthInner({ widget }: NetWorthInnerProps) {
             conditionsOp,
             interval,
             mode: graphMode,
+            negativeDebt,
             timeFrame: {
               start,
               end,
@@ -342,6 +346,14 @@ function NetWorthInner({ widget }: NetWorthInnerProps) {
           <>
             <IntervalSelector interval={interval} onChange={setInterval} />
             <ModeSelector mode={graphMode} onChange={setGraphMode} />
+            {graphMode === 'breakdown' && (
+              <Button
+                variant={negativeDebt ? 'primary' : 'normal'}
+                onPress={() => setNegativeDebt(!negativeDebt)}
+              >
+                <Trans>Debt below zero</Trans>
+              </Button>
+            )}
           </>
         }
       >
@@ -367,6 +379,7 @@ function NetWorthInner({ widget }: NetWorthInnerProps) {
             <NetWorthBreakdownGraph
               graphData={data.graphData}
               interval={interval}
+              negativeDebt={negativeDebt}
             />
           </View>
           <NetWorthBreakdownSidebar

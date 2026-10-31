@@ -159,6 +159,7 @@ export function NetWorthCard({
             <NetWorthBreakdownGraph
               graphData={data.graphData}
               compact
+              negativeDebt={meta?.negativeDebt}
               showTooltip={!isEditing && !isNarrowWidth}
               interval={meta?.interval || 'Monthly'}
               style={{ height: 'auto', flex: 1 }}

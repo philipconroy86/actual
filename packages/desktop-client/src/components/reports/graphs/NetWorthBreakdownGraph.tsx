@@ -33,6 +33,7 @@ type NetWorthBreakdownGraphProps = {
     data: NetWorthBreakdownPoint[];
   };
   interval: 'Daily' | 'Weekly' | 'Monthly' | 'Yearly';
+  negativeDebt?: boolean;
   compact?: boolean;
   showTooltip?: boolean;
   style?: CSSProperties;
@@ -41,6 +42,7 @@ type NetWorthBreakdownGraphProps = {
 export function NetWorthBreakdownGraph({
   graphData,
   interval,
+  negativeDebt = false,
   compact = false,
   showTooltip = true,
   style,
@@ -50,6 +52,13 @@ export function NetWorthBreakdownGraph({
   const privacyMode = usePrivacyMode();
   const id = useId();
   const { isNarrowWidth } = useResponsive();
+
+  const data = negativeDebt
+    ? graphData.data.map(point => ({
+        ...point,
+        debtValue: -point.debtValue,
+      }))
+    : graphData.data;
 
   const formatValue = (value: number) =>
     privacyMode
@@ -70,7 +79,7 @@ export function NetWorthBreakdownGraph({
           responsive
           width={width}
           height={height}
-          data={graphData.data}
+          data={data}
           barCategoryGap="20%"
           barGap={0}
           margin={
