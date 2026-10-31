@@ -1,6 +1,7 @@
 import React from 'react';
 import { Trans } from 'react-i18next';
 
+import { useResponsive } from '@actual-app/components/hooks/useResponsive';
 import {
   SvgArrowOutlineDown,
   SvgArrowOutlineUp,
@@ -50,6 +51,7 @@ export function NetWorthBreakdownSidebar({
 }: NetWorthBreakdownSidebarProps) {
   const format = useFormat();
   const locale = useLocale();
+  const { isNarrowWidth } = useResponsive();
 
   if (points.length === 0) {
     return null;
@@ -89,11 +91,12 @@ export function NetWorthBreakdownSidebar({
   return (
     <View
       style={{
-        width: 300,
-        maxWidth: '100%',
+        width: isNarrowWidth ? '100%' : 300,
         flexShrink: 0,
         backgroundColor: theme.tableBackground,
-        borderLeft: `1px solid ${theme.tableBorderSeparator}`,
+        ...(isNarrowWidth
+          ? { borderTop: `1px solid ${theme.tableBorderSeparator}` }
+          : { borderLeft: `1px solid ${theme.tableBorderSeparator}` }),
         padding: '30px 20px 20px',
       }}
     >
@@ -187,7 +190,12 @@ export function NetWorthBreakdownSidebar({
         </Text>
       </View>
 
-      <View style={{ overflowY: 'auto', maxHeight: 360 }}>
+      <View
+        style={{
+          overflowY: 'auto',
+          maxHeight: isNarrowWidth ? undefined : 360,
+        }}
+      >
         {rows.map(row => (
           <View
             key={row.key}

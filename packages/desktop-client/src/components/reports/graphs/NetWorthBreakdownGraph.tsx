@@ -1,6 +1,7 @@
 import React, { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { useResponsive } from '@actual-app/components/hooks/useResponsive';
 import type { CSSProperties } from '@actual-app/components/styles';
 import { theme } from '@actual-app/components/theme';
 import * as d from 'date-fns';
@@ -17,10 +18,6 @@ import {
 import { Container } from '#components/reports/Container';
 import { useFormat } from '#hooks/useFormat';
 import { usePrivacyMode } from '#hooks/usePrivacyMode';
-
-// Colors chosen to match the YNAB net worth report.
-const DEBT_COLOR = '#E05A38';
-const ASSETS_COLOR = '#4DA6E8';
 
 type NetWorthBreakdownPoint = {
   x: string;
@@ -52,9 +49,12 @@ export function NetWorthBreakdownGraph({
   const format = useFormat();
   const privacyMode = usePrivacyMode();
   const id = useId();
+  const { isNarrowWidth } = useResponsive();
 
   const formatValue = (value: number) =>
-    privacyMode ? '...' : format(value, 'financial');
+    privacyMode
+      ? '...'
+      : format(value, isNarrowWidth ? 'financial-no-decimals' : 'financial');
 
   const tickFormat =
     interval === 'Yearly'
@@ -97,7 +97,7 @@ export function NetWorthBreakdownGraph({
             tick={{ fill: theme.pageText, fontSize: 13 }}
             tickLine={{ stroke: theme.pageTextSubdued }}
             axisLine={false}
-            width={100}
+            width={isNarrowWidth ? 70 : 100}
           />
 
           <ReferenceLine
@@ -121,26 +121,26 @@ export function NetWorthBreakdownGraph({
           <Bar
             dataKey="debtValue"
             name={t('Debt')}
-            fill={DEBT_COLOR}
+            fill={theme.reportsRed}
             isAnimationActive={false}
           />
 
           <Bar
             dataKey="assetsValue"
             name={t('Assets')}
-            fill={ASSETS_COLOR}
+            fill={theme.reportsBlue}
             isAnimationActive={false}
           />
 
           <Line
             dataKey="y"
             name={t('Net worth')}
-            stroke="#3D3D3D"
+            stroke={theme.pageText}
             strokeWidth={1.5}
             dot={{
               r: compact ? 3 : 5,
-              fill: '#FFFFFF',
-              stroke: '#3D3D3D',
+              fill: theme.tableBackground,
+              stroke: theme.pageText,
               strokeWidth: 1.5,
             }}
             activeDot={{ r: 6 }}
