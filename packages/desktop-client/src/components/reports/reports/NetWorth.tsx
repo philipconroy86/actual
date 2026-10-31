@@ -28,9 +28,11 @@ import { MobileBackButton } from '#components/mobile/MobileBackButton';
 import { MobilePageHeader, Page, PageHeader } from '#components/Page';
 import { PrivacyFilter } from '#components/PrivacyFilter';
 import { Change } from '#components/reports/Change';
+import { NetWorthBreakdownGraph } from '#components/reports/graphs/NetWorthBreakdownGraph';
 import { NetWorthGraph } from '#components/reports/graphs/NetWorthGraph';
 import { Header } from '#components/reports/Header';
 import { LoadingIndicator } from '#components/reports/LoadingIndicator';
+import { NetWorthBreakdownSidebar } from '#components/reports/NetWorthBreakdownSidebar';
 import { ReportOptions } from '#components/reports/ReportOptions';
 import { calculateTimeRange } from '#components/reports/reportRanges';
 import { createSpreadsheet as netWorthSpreadsheet } from '#components/reports/spreadsheets/net-worth-spreadsheet';
@@ -47,6 +49,8 @@ import { useSyncedPref } from '#hooks/useSyncedPref';
 import { addNotification } from '#notifications/notificationsSlice';
 import { useDispatch } from '#redux';
 import { useUpdateDashboardWidgetMutation } from '#reports/mutations';
+
+type GraphMode = NonNullable<NonNullable<NetWorthWidget['meta']>['mode']>;
 
 export function NetWorth() {
   const params = useParams();
@@ -106,7 +110,7 @@ function NetWorthInner({ widget }: NetWorthInnerProps) {
   const [interval, setInterval] = useState(
     widget?.meta?.interval || getDefaultIntervalForMode(mode),
   );
-  const [graphMode, setGraphMode] = useState<'trend' | 'stacked'>(
+  const [graphMode, setGraphMode] = useState<GraphMode>(
     widget?.meta?.mode || 'trend',
   );
   // Combined setter: set mode and update interval (unless interval was set in widget meta)
@@ -348,61 +352,86 @@ function NetWorthInner({ widget }: NetWorthInnerProps) {
         )}
       </Header>
 
-      <View
-        style={{
-          backgroundColor: theme.tableBackground,
-          padding: 20,
-          paddingTop: 0,
-          flex: '1 0 auto',
-          overflowY: 'auto',
-        }}
-      >
+      {graphMode === 'breakdown' ? (
         <View
           style={{
-            alignItems: 'flex-end',
-            textAlign: 'right',
-            paddingTop: 20,
+            backgroundColor: theme.tableBackground,
+            flex: '1 0 auto',
+            flexDirection: isNarrowWidth ? 'column' : 'row',
+          }}
+        >
+          <View style={{ flex: 1, minWidth: 0, padding: 20 }}>
+            <View style={{ ...styles.largeText, fontWeight: 400 }}>
+              {title}
+            </View>
+            <NetWorthBreakdownGraph
+              graphData={data.graphData}
+              interval={interval}
+            />
+          </View>
+          <NetWorthBreakdownSidebar
+            points={data.graphData.data}
+            interval={interval}
+            hasFilters={conditions.length > 0}
+          />
+        </View>
+      ) : (
+        <View
+          style={{
+            backgroundColor: theme.tableBackground,
+            padding: 20,
+            paddingTop: 0,
+            flex: '1 0 auto',
+            overflowY: 'auto',
           }}
         >
           <View
-            style={{ ...styles.largeText, fontWeight: 400, marginBottom: 5 }}
+            style={{
+              alignItems: 'flex-end',
+              textAlign: 'right',
+              paddingTop: 20,
+            }}
           >
+            <View
+              style={{ ...styles.largeText, fontWeight: 400, marginBottom: 5 }}
+            >
+              <PrivacyFilter>
+                <FinancialText>
+                  {format(data.netWorth, 'financial')}
+                </FinancialText>
+              </PrivacyFilter>
+            </View>
             <PrivacyFilter>
-              <FinancialText>
-                {format(data.netWorth, 'financial')}
-              </FinancialText>
+              <Change amount={data.totalChange} />
             </PrivacyFilter>
           </View>
-          <PrivacyFilter>
-            <Change amount={data.totalChange} />
-          </PrivacyFilter>
-        </View>
 
-        <NetWorthGraph
-          graphData={data.graphData}
-          accounts={data.accounts}
-          showTooltip={!isNarrowWidth}
-          interval={interval}
-          mode={graphMode}
-        />
+          <NetWorthGraph
+            graphData={data.graphData}
+            accounts={data.accounts}
+            showTooltip={!isNarrowWidth}
+            interval={interval}
+            mode={graphMode === 'stacked' ? 'stacked' : 'trend'}
+          />
 
-        <View style={{ marginTop: 30, userSelect: 'none' }}>
-          <Paragraph>
-            <strong>
-              <Trans>How is net worth calculated?</Trans>
-            </strong>
-          </Paragraph>
-          <Paragraph>
-            <Trans>
-              Net worth shows the balance of all accounts over time, including
-              all of your investments. Your "net worth" is considered to be the
-              amount you'd have if you sold all your assets and paid off as much
-              debt as possible. If you hover over the graph, you can also see
-              the amount of assets and debt individually.
-            </Trans>
-          </Paragraph>
+          <View style={{ marginTop: 30, userSelect: 'none' }}>
+            <Paragraph>
+              <strong>
+                <Trans>How is net worth calculated?</Trans>
+              </strong>
+            </Paragraph>
+            <Paragraph>
+              <Trans>
+                Net worth shows the balance of all accounts over time, including
+                all of your investments. Your "net worth" is considered to be
+                the amount you'd have if you sold all your assets and paid off
+                as much debt as possible. If you hover over the graph, you can
+                also see the amount of assets and debt individually.
+              </Trans>
+            </Paragraph>
+          </View>
         </View>
-      </View>
+      )}
     </Page>
   );
 }
@@ -461,8 +490,8 @@ function ModeSelector({
   mode,
   onChange,
 }: {
-  mode: 'trend' | 'stacked';
-  onChange: (val: 'trend' | 'stacked') => void;
+  mode: GraphMode;
+  onChange: (val: GraphMode) => void;
 }) {
   const { t } = useTranslation();
 
@@ -472,6 +501,7 @@ function ModeSelector({
   const options = [
     { key: 'trend', description: t('Trend') },
     { key: 'stacked', description: t('Stacked') },
+    { key: 'breakdown', description: t('Assets & debt') },
   ];
 
   const currentLabel =
@@ -497,7 +527,7 @@ function ModeSelector({
       >
         <Menu
           onMenuSelect={item => {
-            onChange(item as 'trend' | 'stacked');
+            onChange(item as GraphMode);
             setIsOpen(false);
           }}
           items={options.map(({ key, description }) => ({

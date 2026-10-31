@@ -16,6 +16,7 @@ import { FinancialText } from '#components/FinancialText';
 import { PrivacyFilter } from '#components/PrivacyFilter';
 import { Change } from '#components/reports/Change';
 import { DateRange } from '#components/reports/DateRange';
+import { NetWorthBreakdownGraph } from '#components/reports/graphs/NetWorthBreakdownGraph';
 import { NetWorthGraph } from '#components/reports/graphs/NetWorthGraph';
 import { LoadingIndicator } from '#components/reports/LoadingIndicator';
 import { ReportCard } from '#components/reports/ReportCard';
@@ -154,15 +155,25 @@ export function NetWorthCard({
         </View>
 
         {data ? (
-          <NetWorthGraph
-            graphData={data.graphData}
-            accounts={data.accounts}
-            compact
-            showTooltip={!isEditing && !isNarrowWidth}
-            interval={meta?.interval || 'Monthly'}
-            mode={meta?.mode || 'trend'}
-            style={{ height: 'auto', flex: 1 }}
-          />
+          meta?.mode === 'breakdown' ? (
+            <NetWorthBreakdownGraph
+              graphData={data.graphData}
+              compact
+              showTooltip={!isEditing && !isNarrowWidth}
+              interval={meta?.interval || 'Monthly'}
+              style={{ height: 'auto', flex: 1 }}
+            />
+          ) : (
+            <NetWorthGraph
+              graphData={data.graphData}
+              accounts={data.accounts}
+              compact
+              showTooltip={!isEditing && !isNarrowWidth}
+              interval={meta?.interval || 'Monthly'}
+              mode={meta?.mode === 'stacked' ? 'stacked' : 'trend'}
+              style={{ height: 'auto', flex: 1 }}
+            />
+          )
         ) : (
           <LoadingIndicator />
         )}

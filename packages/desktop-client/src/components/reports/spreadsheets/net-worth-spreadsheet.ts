@@ -414,6 +414,9 @@ function recalculate(
       change: string;
       networth: string;
       date: string;
+      assetsValue: number;
+      debtValue: number;
+      dateKey: string;
     }>
   >((arr, intervalItem, idx) => {
     let debt = 0;
@@ -471,11 +474,14 @@ function recalculate(
     const graphPoint = {
       x: d.format(x, displayFormat, { locale }),
       y: total,
+      assetsValue: assets,
+      debtValue: debt,
       assets: format(assets, 'financial'),
       debt: `-${format(debt, 'financial')}`,
       change: format(change, 'financial'),
       networth: format(total, 'financial'),
       date: d.format(x, tooltipFormat, { locale }),
+      dateKey: d.format(x, 'yyyy-MM-dd'),
       ...balances,
     };
 
