@@ -32,7 +32,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./Dockerfile
+          file: ./sync-server.Dockerfile
           push: true
           tags: ghcr.io/philipconroy86/actual:net-worth-breakdown
           cache-from: type=gha
