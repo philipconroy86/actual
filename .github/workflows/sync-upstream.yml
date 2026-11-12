@@ -45,3 +45,13 @@ jobs:
         run: |
           git push origin HEAD:master
 
+      - name: Merge master into Net Worth branch
+        run: |
+          git fetch origin feature/net-worth-breakdown
+          git switch -C feature/net-worth-breakdown origin/feature/net-worth-breakdown
+          git merge --no-edit master
+
+      - name: Push updated Net Worth branch
+        run: |
+          git push origin HEAD:feature/net-worth-breakdown
+
